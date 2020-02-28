@@ -2,7 +2,6 @@
     <div>
         <div v-if="showLatest">
             <Content slot-key="latest-release"/>
-            <markdown-it-vue :content="getReleaseBody()" />
             <div v-for="os in ['Ubuntu', 'MacOS', 'Windows']" :key="os">
                 <a :href="`${baseUrl}/${latestRelease(os).key}`">
                     <Badge :text="'Get ' + latest.tag_name + ' for ' + os" vertical="middle" />
@@ -43,7 +42,6 @@
 
 <script>
     import {Tabs, Tab} from 'vue-tabs-component';
-    import MarkdownItVue from 'markdown-it-vue';
 
     export default {
         props: {
@@ -53,7 +51,6 @@
         components: {
             Tabs,
             Tab,
-            MarkdownItVue
         },
         data() {
             return {
@@ -139,9 +136,6 @@
             extractArch(key) {
                 return new RegExp(/-x(\d*_?\d*)/, 'g').exec(key)[1];
             },
-            getReleaseBody() {
-                return this.latest.body;
-            }
         },
         computed: {
             showLatest() {
