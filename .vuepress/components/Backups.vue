@@ -7,6 +7,7 @@
                         <th>Date</th>
                         <th>Kind</th>
                         <th>Size</th>
+                        <th>MD5 Checksum</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -18,7 +19,7 @@
                         </td>
                         <td>{{ getKind(backup.key) }}</td>
                         <td>{{ readableBytes(backup.size) }}</td>
-
+                        <td>{{ backup.checksum }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -33,6 +34,7 @@
                         <th>Date</th>
                         <th>Kind</th>
                         <th>Size</th>
+                        <th>MD5 Checksum</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -44,6 +46,7 @@
                         </td>
                         <td>{{ getKind(backup.key) }}</td>
                         <td>{{ readableBytes(backup.size) }}</td>
+                        <td>{{ backup.checksum }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -69,7 +72,6 @@
         data() {
             return {
                 backups: [],
-                latest: '',
                 cnt: this.backupsCnt,
             }
         },
@@ -78,11 +80,46 @@
         },
         methods: {
             async fetchData() {
-                await fetch(this.baseUrl)
+                let xml = await fetch(this.baseUrl)
                     .then(response => response.text())
-                    .then(data => this.backups = this.parseXml(data))
                     .catch(() => [])
                 ;
+
+                const data = this.parseXml(xml)
+                this.backups = await this.parseChecksums(data)
+            },
+            async fetchChecksum(file) {
+                let checksum = await fetch(`${this.baseUrl}/${file.key}.md5`)
+                    .then(response => response.text())
+                    .then((result) => result)
+                    .catch(() => [])
+                ;
+
+                return checksum
+            },
+            async parseChecksums(snapshots) {
+                let withChecksums = []
+                for (let i = snapshots.length - 1; i >= 0; i--) {
+                    const snapshot = snapshots[i]
+
+                    if (snapshot.key.includes('.md5')) {
+                        continue
+                    }
+
+                    if (snapshots.find(backup => backup.key === `${snapshot.key}.md5`)) {
+                        const checksum = await this.fetchChecksum(snapshot);
+                        withChecksums.push({
+                            ...snapshot,
+                            checksum
+                        })
+
+                        continue
+                    }
+
+                    withChecksums.push(snapshot)
+                }
+
+                return withChecksums
             },
             parseXml(xml) {
                 let parser = new DOMParser();
