@@ -80,7 +80,7 @@
         },
         methods: {
             async fetchData() {
-                let xml = await fetch(this.baseUrl)
+                const xml = await fetch(this.baseUrl)
                     .then(response => response.text())
                     .catch(() => [])
                 ;
@@ -89,25 +89,23 @@
                 this.backups = await this.parseChecksums(data)
             },
             async fetchChecksum(file) {
-                let checksum = await fetch(`${this.baseUrl}/${file.key}.md5`)
+                return await fetch(`${this.baseUrl}/${file.key}.md5`)
                     .then(response => response.text())
                     .then((result) => result)
                     .catch(() => [])
                 ;
-
-                return checksum
             },
             async parseChecksums(snapshots) {
                 let withChecksums = []
                 for (let i = snapshots.length - 1; i >= 0; i--) {
-                    const snapshot = snapshots[i]
+                    let snapshot = snapshots[i]
 
                     if (snapshot.key.includes('.md5')) {
                         continue
                     }
 
                     if (snapshots.find(backup => backup.key === `${snapshot.key}.md5`)) {
-                        const checksum = await this.fetchChecksum(snapshot);
+                        let checksum = await this.fetchChecksum(snapshot);
                         withChecksums.push({
                             ...snapshot,
                             checksum
