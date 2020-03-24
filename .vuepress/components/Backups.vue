@@ -85,8 +85,8 @@
                     .catch(() => [])
                 ;
 
-                const data = this.parseXml(xml)
-                this.backups = await this.parseChecksums(data)
+                const data = this.parseXml(xml);
+                this.backups = await this.parseChecksums(data);
             },
             async fetchChecksum(file) {
                 return await fetch(`${this.baseUrl}/${file.key}.md5`)
@@ -96,12 +96,12 @@
                 ;
             },
             async parseChecksums(snapshots) {
-                let withChecksums = []
+                let withChecksums = [];
                 for (let i = snapshots.length - 1; i >= 0; i--) {
-                    let snapshot = snapshots[i]
+                    let snapshot = snapshots[i];
 
                     if (snapshot.key.includes('.md5')) {
-                        continue
+                        continue;
                     }
 
                     if (snapshots.find(backup => backup.key === `${snapshot.key}.md5`)) {
@@ -109,15 +109,15 @@
                         withChecksums.push({
                             ...snapshot,
                             checksum
-                        })
+                        });
 
-                        continue
+                        continue;
                     }
 
-                    withChecksums.push(snapshot)
+                    withChecksums.push(snapshot);
                 }
 
-                return withChecksums
+                return withChecksums;
             },
             parseXml(xml) {
                 let parser = new DOMParser();
