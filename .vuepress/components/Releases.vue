@@ -3,7 +3,7 @@
         <div v-if="showLatest">
             <Content slot-key="latest-release"/>
             <div v-for="os in ['Ubuntu', 'MacOS', 'Windows']" :key="os">
-                <a :href="`${baseUrl}/${latestRelease(os).key}`">
+                <a :href="`${baseUrl}/${latestRelease(os).key}`" v-if="latestRelease(os)">
                     <Badge :text="'Get ' + latest.tag_name + ' for ' + os" vertical="middle" />
                 </a>
             </div>

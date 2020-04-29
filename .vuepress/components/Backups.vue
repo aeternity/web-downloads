@@ -139,7 +139,11 @@
                 return this.filteredBackups(type).sort((a, b) => a.lastModified < b.lastModified).slice(0, this.cnt);
             },
             filteredBackups(type) {
-                return this.backups.filter(release => release.key.includes(type) && !release.key.includes('.md5'));
+                return this.backups.filter(
+                    release => release.key.includes(type)
+                        && !release.key.includes('.md5')
+                        && !release.key.includes('latest')
+                );
             },
             readableBytes(bytes) {
                 let i = Math.floor(Math.log(bytes) / Math.log(1024));
