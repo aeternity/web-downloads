@@ -82,17 +82,17 @@
             async fetchData() {
                 const xml = await fetch(this.baseUrl)
                     .then(response => response.text())
-                    .catch(() => [])
+                    .catch(() => {})
                 ;
 
                 const data = this.parseXml(xml);
-                this.backups = await this.parseChecksums(data);
+                this.backups = await this.parseChecksums(data).catch(() => {});
             },
             async fetchChecksum(file) {
                 return await fetch(`${this.baseUrl}/${file.key}.md5`)
                     .then(response => response.text())
                     .then((result) => result)
-                    .catch(() => [])
+                    .catch(() => {})
                 ;
             },
             async parseChecksums(snapshots) {
@@ -105,7 +105,7 @@
                     }
 
                     if (snapshots.find(backup => backup.key === `${snapshot.key}.md5`)) {
-                        let checksum = await this.fetchChecksum(snapshot);
+                        let checksum = await this.fetchChecksum(snapshot).catch(() => {});
                         withChecksums.push({
                             ...snapshot,
                             checksum
@@ -123,9 +123,9 @@
                 let parser = new DOMParser();
                 let xmlDoc = parser.parseFromString(xml, "text/xml");
                 let content = xmlDoc.getElementsByTagName("Contents");
-                var data = [];
+                let data = [];
 
-                for (var i = content.length - 1; i >= 0; i--) {
+                for (let i = content.length - 1; i >= 0; i--) {
                     data.push({
                         'key': content[i].childNodes[0].childNodes[0].nodeValue,
                         'lastModified': content[i].childNodes[1].childNodes[0].nodeValue,
@@ -136,7 +136,7 @@
                 return data;
             },
             limitedBackups(type) {
-                return this.filteredBackups(type).sort((a, b) => a.lastModified < b.lastModified).slice(0, this.cnt);
+                return this.filteredBackups(type).sort((a, b) => a.lastModified < b.lastModified ? 1 : -1).slice(0, this.cnt);
             },
             filteredBackups(type) {
                 return this.backups.filter(

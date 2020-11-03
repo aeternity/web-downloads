@@ -69,23 +69,23 @@
                 await fetch(this.baseUrl)
                     .then(response => response.text())
                     .then(data => this.releases = this.parseXml(data))
-                    .catch(() => [])
+                    .catch(() => {})
                 ;
             },
             async fetchLatestRelease() {
                 await fetch("https://api.github.com/repos/aeternity/aeternity/releases/latest")
                     .then(response => response.json())
                     .then(data => this.latest = data)
-                    .catch(() => [])
+                    .catch(() => {})
                 ;
             },
             parseXml(xml) {
                 let parser = new DOMParser();
                 let xmlDoc = parser.parseFromString(xml, "text/xml");
                 let content = xmlDoc.getElementsByTagName("Contents");
-                var data = [];
+                let data = [];
 
-                for (var i = content.length - 1; i >= 0; i--) {
+                for (let i = content.length - 1; i >= 0; i--) {
                     data.push({
                         'key': content[i].childNodes[0].childNodes[0].nodeValue,
                         'lastModified': content[i].childNodes[1].childNodes[0].nodeValue,
@@ -101,7 +101,7 @@
                 );
             },
             limitedReleases(os) {
-                return this.filteredReleases(os).sort((a, b) => a.lastModified < b.lastModified).slice(0, this.cnt);
+                return this.filteredReleases(os).sort((a, b) => a.lastModified < b.lastModified ? 1 : -1).slice(0, this.cnt);
             },
             filteredReleases(os) {
                 return this.releases.filter(

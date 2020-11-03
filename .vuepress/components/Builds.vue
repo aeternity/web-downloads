@@ -54,16 +54,16 @@
                 await fetch(this.baseUrl)
                     .then(response => response.text())
                     .then(data => this.builds = this.parseXml(data))
-                    .catch(() => [])
+                    .catch(() => {})
                 ;
             },
             parseXml(xml) {
                 let parser = new DOMParser();
                 let xmlDoc = parser.parseFromString(xml, "text/xml");
                 let content = xmlDoc.getElementsByTagName("Contents");
-                var data = [];
+                let data = [];
 
-                for (var i = content.length - 1; i >= 0; i--) {
+                for (let i = content.length - 1; i >= 0; i--) {
                     data.push({
                         'key': content[i].childNodes[0].childNodes[0].nodeValue,
                         'lastModified': content[i].childNodes[1].childNodes[0].nodeValue,
@@ -74,7 +74,7 @@
                 return data;
             },
             limitedBuilds(os) {
-                return this.filteredBuilds(os).sort((a, b) => a.lastModified < b.lastModified).slice(0, this.cnt);
+                return this.filteredBuilds(os).sort((a, b) => a.lastModified < b.lastModified ? 1 : -1).slice(0, this.cnt);
             },
             filteredBuilds(os) {
                 return this.builds.filter(build => build.key.includes(os.toLowerCase()));
