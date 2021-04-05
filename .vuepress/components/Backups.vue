@@ -158,14 +158,15 @@
                 this.cnt = this.backupsCnt;
             },
             getKind(key) {
-                if (['.tgz', '.tar.gz', '.zip'].includes(this.extractExtension(key))) {
-                    return 'Archive';
+                if (key.includes('_light_')) {
+                    return 'light'
                 }
 
-                return '-';
-            },
-            extractExtension(key) {
-                return new RegExp(/(\.[a-z]+)+/, 'g').exec(key)[0];
+                if (key.includes('_full_')) {
+                    return 'full'
+                }
+
+                return 'full';
             },
         },
     }
