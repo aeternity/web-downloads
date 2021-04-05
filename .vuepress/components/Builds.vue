@@ -13,9 +13,9 @@
                 </thead>
                 <tbody>
                     <tr v-for="build in limitedBuilds(os)" :key="build.key">
-                        <td><a :href="`${baseUrl}/${build.key}`">{{ extractVersion(build.key) }}</a></td>
+                        <td><a :href="`${baseUrl}/${build.key}`">{{ getShortVersion(build.key) }}</a></td>
                         <td>{{ getKind(build.key) }}</td>
-                        <td>{{ extractArch(build.key) }}-bit</td>
+                        <td>{{ getArch(build.key) }}-bit</td>
                         <td>{{ readableBytes(build.size) }}</td>
                         <td>{{ new Date(build.lastModified).toLocaleDateString() }}</td>
                     </tr>
@@ -91,22 +91,25 @@
             tabChanged() {
                 this.cnt = this.buildsCnt;
             },
-            extractVersion(key) {
+            getVersion(key) {
                 return new RegExp(/aeternity-(.*?)-[\w]+/, 'g').exec(key)[1];
             },
             getKind(key) {
-                if (['.tar.gz', '.zip'].includes(this.extractExtension(key))) {
+                if (['.tar.gz', '.zip'].includes(this.getExtension(key))) {
                     return 'Archive';
                 }
 
                 return '-';
             },
-            extractExtension(key) {
+            getExtension(key) {
                 return new RegExp(/(\.[a-z]+)+/, 'g').exec(key)[0];
             },
-            extractArch(key) {
+            getArch(key) {
                 return new RegExp(/-x(\d*_?\d*)/, 'g').exec(key)[1];
-            }
+            },
+            getShortVersion(key) {
+                return this.getVersion(key).substring(0, 8);
+            },
         },
     }
 </script>
