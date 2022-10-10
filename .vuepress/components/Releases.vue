@@ -1,43 +1,31 @@
 <template>
-    <div>
-        <div v-if="showLatest">
-            <Content slot-key="latest-release"/>
-            <div v-for="os in ['Ubuntu', 'MacOS', 'Windows']" :key="os">
-                <a :href="`${baseUrl}/${latestRelease(os).key}`" v-if="latestRelease(os)">
-                    <Badge :text="'Get ' + latest.tag_name + ' for ' + os" vertical="middle" />
-                </a>
+    <tabs :options="{ useUrlFragment: false }" @changed="tabChanged()">
+        <tab v-for="os in ['Ubuntu', 'MacOS', 'Windows']" :key="os" :name="os">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Version</th>
+                        <th>Kind</th>
+                        <th>Arch</th>
+                        <th>Size</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="release in limitedReleases(os)" :key="release.key">
+                        <td><a :href="`${baseUrl}/${release.key}`">&aelig;ternity node {{ extractVersion(release.key) }}</a></td>
+                        <td>{{ getKind(release.key) }}</td>
+                        <td>{{ extractArch(release.key) }}-bit</td>
+                        <td>{{ readableBytes(release.size) }}</td>
+                        <td>{{ new Date(release.lastModified).toLocaleDateString() }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div>
+                <a href="#" @click.prevent="cnt += releasesCnt" v-if="showLoadMore(os)">Show older releases</a>
             </div>
-        </div>
-        <Content slot-key="specific-version"/>
-        <Content slot-key="stable-releases"/>
-        <tabs :options="{ useUrlFragment: false }" @changed="tabChanged()">
-            <tab v-for="os in ['Ubuntu', 'MacOS', 'Windows']" :key="os" :name="os">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Version</th>
-                            <th>Kind</th>
-                            <th>Arch</th>
-                            <th>Size</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="release in limitedReleases(os)" :key="release.key">
-                            <td><a :href="`${baseUrl}/${release.key}`">{{ extractVersion(release.key) }}</a></td>
-                            <td>{{ getKind(release.key) }}</td>
-                            <td>{{ extractArch(release.key) }}-bit</td>
-                            <td>{{ readableBytes(release.size) }}</td>
-                            <td>{{ new Date(release.lastModified).toLocaleDateString() }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div>
-                    <a href="#" @click.prevent="cnt += releasesCnt" v-if="showLoadMore(os)">Show older releases</a>
-                </div>
-            </tab>
-        </tabs>
-    </div>
+        </tab>
+    </tabs>
 </template>
 
 <script>
@@ -109,7 +97,7 @@
                 );
             },
             extractVersion(key) {
-                return 'aeternity node ' + new RegExp(/[\d\.]+/, 'g').exec(key)[0];
+                return new RegExp(/-(.*)(-[\w]+-x)/, 'g').exec(key)[1];
             },
             readableBytes(bytes) {
                 let i = Math.floor(Math.log(bytes) / Math.log(1024));
@@ -124,17 +112,18 @@
                 return this.cnt <= this.filteredReleases(os).length;
             },
             getKind(key) {
-                if (['.tar.gz', '.zip'].includes(this.extractExtension(key))) {
+                const ext = this.extractExtension(key);
+                if (['.tar.gz', '.zip'].includes(ext)) {
                     return 'Archive';
                 }
 
-                return '-';
+                return ext ? ext : '-';
             },
             extractExtension(key) {
-                return new RegExp(/(\.[a-z]+)+/, 'g').exec(key)[0];
+                return new RegExp(/(\.[a-z]+)+|$/, 'g').exec(key)[0];
             },
             extractArch(key) {
-                return new RegExp(/-x(\d*_?\d*)/, 'g').exec(key)[1];
+                return new RegExp(/-x(\d*_?\d*)|-(\w+)$/, 'g').exec(key)[1];
             },
         },
         computed: {

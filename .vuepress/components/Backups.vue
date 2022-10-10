@@ -19,7 +19,11 @@
                         </td>
                         <td>{{ getKind(backup.key) }}</td>
                         <td>{{ readableBytes(backup.size) }}</td>
-                        <td>{{ backup.checksum }}</td>
+                        <td>
+                            <a :href="`${baseUrl}/${backup.key}.md5`">
+                                {{ backup.checksum }}
+                            </a>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -46,7 +50,11 @@
                         </td>
                         <td>{{ getKind(backup.key) }}</td>
                         <td>{{ readableBytes(backup.size) }}</td>
-                        <td>{{ backup.checksum }}</td>
+                        <td>
+                            <a :href="`${baseUrl}/${backup.key}.md5`">
+                                {{ backup.checksum }}
+                            </a>
+                        </td>
                     </tr>
                 </tbody>
             </table>

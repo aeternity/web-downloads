@@ -92,7 +92,7 @@
                 this.cnt = this.buildsCnt;
             },
             getVersion(key) {
-                return new RegExp(/aeternity-(.*?)-[\w]+/, 'g').exec(key)[1];
+                return new RegExp(/aeternity-(.+)(-\w+-x)/, 'g').exec(key)[1];
             },
             getKind(key) {
                 if (['.tar.gz', '.zip'].includes(this.getExtension(key))) {
@@ -108,7 +108,8 @@
                 return new RegExp(/-x(\d*_?\d*)/, 'g').exec(key)[1];
             },
             getShortVersion(key) {
-                return this.getVersion(key).substring(0, 8);
+                const ver = this.getVersion(key);
+                return ver.substring(0, ver.indexOf('-') + 9);
             },
         },
     }
