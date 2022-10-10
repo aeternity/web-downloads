@@ -1,31 +1,43 @@
 <template>
-    <tabs :options="{ useUrlFragment: false }" @changed="tabChanged()">
-        <tab v-for="os in ['Ubuntu', 'MacOS', 'Windows']" :key="os" :name="os">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Version</th>
-                        <th>Kind</th>
-                        <th>Arch</th>
-                        <th>Size</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="release in limitedReleases(os)" :key="release.key">
-                        <td><a :href="`${baseUrl}/${release.key}`">&aelig;ternity node {{ extractVersion(release.key) }}</a></td>
-                        <td>{{ getKind(release.key) }}</td>
-                        <td>{{ extractArch(release.key) }}-bit</td>
-                        <td>{{ readableBytes(release.size) }}</td>
-                        <td>{{ new Date(release.lastModified).toLocaleDateString() }}</td>
-                    </tr>
-                </tbody>
-            </table>
-            <div>
-                <a href="#" @click.prevent="cnt += releasesCnt" v-if="showLoadMore(os)">Show older releases</a>
+    <div>
+        <div v-if="showLatest">
+            <Content slot-key="latest-release"/>
+            <div v-for="os in ['Ubuntu', 'MacOS', 'Windows']" :key="os">
+                <a :href="`${baseUrl}/${latestRelease(os).key}`" v-if="latestRelease(os)">
+                    <Badge :text="'Get ' + latest.tag_name + ' for ' + os" vertical="middle" />
+                </a>
             </div>
-        </tab>
-    </tabs>
+        </div>
+        <Content slot-key="specific-version"/>
+        <Content slot-key="stable-releases"/>
+        <tabs :options="{ useUrlFragment: false }" @changed="tabChanged()">
+            <tab v-for="os in ['Ubuntu', 'MacOS', 'Windows']" :key="os" :name="os">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Kind</th>
+                            <th>Arch</th>
+                            <th>Size</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="release in limitedReleases(os)" :key="release.key">
+                            <td><a :href="`${baseUrl}/${release.key}`">&aelig;ternity node {{ extractVersion(release.key) }}</a></td>
+                            <td>{{ getKind(release.key) }}</td>
+                            <td>{{ extractArch(release.key) }}-bit</td>
+                            <td>{{ readableBytes(release.size) }}</td>
+                            <td>{{ new Date(release.lastModified).toLocaleDateString() }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div>
+                    <a href="#" @click.prevent="cnt += releasesCnt" v-if="showLoadMore(os)">Show older releases</a>
+                </div>
+            </tab>
+        </tabs>
+    </div>
 </template>
 
 <script>
