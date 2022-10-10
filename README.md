@@ -12,7 +12,7 @@ After committing your changes to master:
 
 ```bash
 git checkout -b gh-pages-build master
-npm run build
+NODE_ENV=production npm run build
 echo downloads.aeternity.io > .vuepress/dist/CNAME
 git add -f .vuepress/dist
 git commit -m "Deploy to GitHub pages"
