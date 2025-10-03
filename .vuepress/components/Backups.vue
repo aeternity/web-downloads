@@ -6,6 +6,7 @@
                 <a :href="`${baseUrl}/${b.key}`">
                     <Badge :text="`Get latest ${getKind(b.key)} snapshot for ${getNetwork(b.key)}`" vertical="middle" />
                 </a>
+                - {{ new Date(b.lastModified).toLocaleDateString() }} - {{ readableBytes(b.size) }}
             </div>
         </div>
         <tabs :options="{ useUrlFragment: false }" @changed="tabChanged()">
@@ -159,11 +160,14 @@
                 return this.filteredBackups(type).sort((a, b) => a.lastModified < b.lastModified ? 1 : -1).slice(0, this.cnt);
             },
             filteredBackups(type) {
-                return this.backups.filter(
-                    release => release.key.includes(type)
-                        && !release.key.includes('.md5')
-                        && !release.key.includes('latest')
-                );
+                return this.backups.filter(release => {
+                    const k = release.key || '';
+                    if (!k.includes(type)) return false;
+                    if (k.includes('.md5')) return false;
+                    const isMDW = /^mdw[_-]/i.test(k);
+                    if (!isMDW && k.includes('latest')) return false; // exclude non-MDW latest
+                    return true;
+                });
             },
             readableBytes(bytes) {
                 const n = Number(bytes);
@@ -181,6 +185,10 @@
                 this.cnt = this.backupsCnt;
             },
             getKind(key) {
+                if (/mdw[_-]/i.test(key) || key.startsWith('mdw_')) {
+                    return 'MDW'
+                }
+
                 if (key.includes('_light_')) {
                     return 'Light'
                 }
@@ -189,20 +197,16 @@
                     return 'Full'
                 }
 
-                if (key.includes('_mdw_')) {
-                    return 'MDW'
-                }
-
                 return 'full';
             },
         },
         computed: {
             latestBackups() {
-                // Show only entries starting with main_v or uat_v that include 'latest' and are not checksum files
+                // Show entries: (main_v*latest, uat_v*latest, mdw_main_latest*, mdw_uat_latest*) excluding checksum files
                 return (this.backups || []).filter(b => {
                     const k = (b.key || '').toLowerCase();
                     if (!k || k.endsWith('.md5')) return false;
-                    const hasPrefix = k.startsWith('main_v') || k.startsWith('uat_v');
+                    const hasPrefix = k.startsWith('main_v') || k.startsWith('uat_v') || k.startsWith('mdw_main_latest') || k.startsWith('mdw_uat_latest');
                     const isLatest = k.includes('latest');
                     return hasPrefix && isLatest;
                 });
