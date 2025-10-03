@@ -1,5 +1,14 @@
 <template>
-    <tabs :options="{ useUrlFragment: false }" @changed="tabChanged()">
+    <div>
+        <!-- Latest backups quick links -->
+        <div v-if="latestBackups.length">
+            <div v-for="b in latestBackups" :key="b.key" style="margin: 6px 0;">
+                <a :href="`${baseUrl}/${b.key}`">
+                    <Badge :text="`Get latest ${getKind(b.key)} for ${getNetwork(b.key)}`" vertical="middle" />
+                </a>
+            </div>
+        </div>
+        <tabs :options="{ useUrlFragment: false }" @changed="tabChanged()">
         <tab name="Main net">
             <table>
                 <thead>
@@ -51,6 +60,7 @@
             </div>
         </tab>
     </tabs>
+    </div>
 </template>
 
 <script>
@@ -139,6 +149,12 @@
 
                 return data;
             },
+            getNetwork(key) {
+                const k = (key || '').toLowerCase();
+                if (k.includes('uat')) return 'testnet';
+                if (k.includes('main')) return 'mainnet';
+                return '-';
+            },
             limitedBackups(type) {
                 return this.filteredBackups(type).sort((a, b) => a.lastModified < b.lastModified ? 1 : -1).slice(0, this.cnt);
             },
@@ -180,5 +196,11 @@
                 return 'full';
             },
         },
+        computed: {
+            latestBackups() {
+                // Show items that include 'latest' in the name and are not checksum files
+                return (this.backups || []).filter(b => b.key && b.key.includes('latest') && !b.key.endsWith('.md5'));
+            }
+        }
     }
 </script>
