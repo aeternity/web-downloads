@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vuepress dev",
     "watch": "vuepress dev",
-    "build": "vuepress build"
+    "build": "NODE_ENV=production vuepress build",
+    "smoke": "node scripts/smoke.js"
   },
   "dependencies": {
     "vue-tabs-component": "^1.5.0",

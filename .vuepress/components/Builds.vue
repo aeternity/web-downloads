@@ -15,7 +15,7 @@
                     <tr v-for="build in limitedBuilds(os)" :key="build.key">
                         <td><a :href="`${baseUrl}/${build.key}`">{{ getShortVersion(build.key) }}</a></td>
                         <td>{{ getKind(build.key) }}</td>
-                        <td>{{ getArch(build.key) }}-bit</td>
+                        <td>{{ formatArch(build.key) }}</td>
                         <td>{{ readableBytes(build.size) }}</td>
                         <td>{{ new Date(build.lastModified).toLocaleDateString() }}</td>
                     </tr>
@@ -46,7 +46,8 @@
                 cnt: this.buildsCnt,
             }
         },
-        created() {
+        mounted() {
+            // Client-only: avoid SSR fetch during static build
             this.fetchData();
         },
         methods: {
@@ -58,17 +59,24 @@
                 ;
             },
             parseXml(xml) {
-                let parser = new DOMParser();
-                let xmlDoc = parser.parseFromString(xml, "text/xml");
-                let content = xmlDoc.getElementsByTagName("Contents");
-                let data = [];
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xml, 'application/xml');
+                const contents = xmlDoc.getElementsByTagName('Contents');
+                const data = [];
 
-                for (let i = content.length - 1; i >= 0; i--) {
-                    data.push({
-                        'key': content[i].childNodes[0].childNodes[0].nodeValue,
-                        'lastModified': content[i].childNodes[1].childNodes[0].nodeValue,
-                        'size': content[i].childNodes[3].childNodes[0].nodeValue,
-                    });
+                for (let i = 0; i < contents.length; i++) {
+                    const node = contents[i];
+                    const getText = (tag) => {
+                        const el = node.getElementsByTagName(tag)[0];
+                        return el && el.textContent ? el.textContent : '';
+                    };
+                    const key = getText('Key');
+                    const lastModified = getText('LastModified');
+                    const sizeStr = getText('Size');
+                    const size = sizeStr ? parseInt(sizeStr, 10) : 0;
+                    if (key) {
+                        data.push({ key, lastModified, size });
+                    }
                 }
 
                 return data;
@@ -80,10 +88,13 @@
                 return this.builds.filter(build => build.key.includes(os.toLowerCase()));
             },
             readableBytes(bytes) {
-                let i = Math.floor(Math.log(bytes) / Math.log(1024));
-                let sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-                return (bytes / Math.pow(1024, i)).toFixed(2) * 1 + ' ' + sizes[i];
+                const n = Number(bytes);
+                const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+                if (!isFinite(n) || n < 0) return '-';
+                if (n === 0) return '0 B';
+                const i = Math.min(Math.floor(Math.log(n) / Math.log(1024)), sizes.length - 1);
+                const value = n / Math.pow(1024, i);
+                return value.toFixed(2) + ' ' + sizes[i];
             },
             showLoadMore(os) {
                 return this.cnt <= this.filteredBuilds(os).length;
@@ -95,6 +106,13 @@
                 return new RegExp(/aeternity-(.+)(-\w+-x)/, 'g').exec(key)[1];
             },
             getKind(key) {
+                const k = (key || '').toLowerCase();
+                if (k.includes('-standalone')) {
+                    return 'Standalone';
+                }
+                if (k.includes('-bundle-')) {
+                    return 'Bundle';
+                }
                 if (['.tar.gz', '.zip'].includes(this.getExtension(key))) {
                     return 'Archive';
                 }
@@ -104,8 +122,28 @@
             getExtension(key) {
                 return new RegExp(/(\.[a-z]+)+/, 'g').exec(key)[0];
             },
-            getArch(key) {
-                return new RegExp(/-x(\d*_?\d*)/, 'g').exec(key)[1];
+            extractArchToken(key) {
+                const k = (key || '').toLowerCase();
+                if (/\b(arm64|aarch64)\b/.test(k)) return 'arm64';
+                if (/\b(x86_64|amd64|x64)\b/.test(k)) return 'x86_64';
+                if (/\b(i386|x86)\b/.test(k) && !/\bx86_64\b/.test(k)) return 'x86';
+                return null;
+            },
+            extractLegacyBits(key) {
+                const k = (key || '').toLowerCase();
+                const legacy = /-x(86_?64|64|32)\b/.exec(k);
+                if (!legacy) return null;
+                const g = legacy[1];
+                if (g.includes('64')) return '64-bit';
+                if (g.includes('32')) return '32-bit';
+                return null;
+            },
+            formatArch(key) {
+                const token = this.extractArchToken(key);
+                if (token) return token;
+                const bits = this.extractLegacyBits(key);
+                if (bits) return bits;
+                return '-';
             },
             getShortVersion(key) {
                 const ver = this.getVersion(key);

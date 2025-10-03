@@ -7,7 +7,6 @@
                         <th>Date</th>
                         <th>Kind</th>
                         <th>Size</th>
-                        <th>MD5 Checksum</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -19,11 +18,6 @@
                         </td>
                         <td>{{ getKind(backup.key) }}</td>
                         <td>{{ readableBytes(backup.size) }}</td>
-                        <td>
-                            <a :href="`${baseUrl}/${backup.key}.md5`">
-                                {{ backup.checksum }}
-                            </a>
-                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -38,7 +32,6 @@
                         <th>Date</th>
                         <th>Kind</th>
                         <th>Size</th>
-                        <th>MD5 Checksum</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -50,11 +43,6 @@
                         </td>
                         <td>{{ getKind(backup.key) }}</td>
                         <td>{{ readableBytes(backup.size) }}</td>
-                        <td>
-                            <a :href="`${baseUrl}/${backup.key}.md5`">
-                                {{ backup.checksum }}
-                            </a>
-                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -83,7 +71,8 @@
                 cnt: this.backupsCnt,
             }
         },
-        created() {
+        mounted() {
+            // Client-only: avoid SSR fetch during static build
             this.fetchData();
         },
         methods: {
@@ -128,17 +117,24 @@
                 return withChecksums;
             },
             parseXml(xml) {
-                let parser = new DOMParser();
-                let xmlDoc = parser.parseFromString(xml, "text/xml");
-                let content = xmlDoc.getElementsByTagName("Contents");
-                let data = [];
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xml, 'application/xml');
+                const contents = xmlDoc.getElementsByTagName('Contents');
+                const data = [];
 
-                for (let i = content.length - 1; i >= 0; i--) {
-                    data.push({
-                        'key': content[i].childNodes[0].childNodes[0].nodeValue,
-                        'lastModified': content[i].childNodes[1].childNodes[0].nodeValue,
-                        'size': content[i].childNodes[3].childNodes[0].nodeValue,
-                    });
+                for (let i = 0; i < contents.length; i++) {
+                    const node = contents[i];
+                    const getText = (tag) => {
+                        const el = node.getElementsByTagName(tag)[0];
+                        return el && el.textContent ? el.textContent : '';
+                    };
+                    const key = getText('Key');
+                    const lastModified = getText('LastModified');
+                    const sizeStr = getText('Size');
+                    const size = sizeStr ? parseInt(sizeStr, 10) : 0;
+                    if (key) {
+                        data.push({ key, lastModified, size });
+                    }
                 }
 
                 return data;
@@ -154,10 +150,13 @@
                 );
             },
             readableBytes(bytes) {
-                let i = Math.floor(Math.log(bytes) / Math.log(1024));
-                let sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-                return (bytes / Math.pow(1024, i)).toFixed(2) * 1 + ' ' + sizes[i];
+                const n = Number(bytes);
+                const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+                if (!isFinite(n) || n < 0) return '-';
+                if (n === 0) return '0 B';
+                const i = Math.min(Math.floor(Math.log(n) / Math.log(1024)), sizes.length - 1);
+                const value = n / Math.pow(1024, i);
+                return value.toFixed(2) + ' ' + sizes[i];
             },
             showLoadMore(type) {
                 return this.cnt <= this.filteredBackups(type).length;
@@ -172,6 +171,10 @@
 
                 if (key.includes('_full_')) {
                     return 'full'
+                }
+
+                if (key.includes('_mdw_')) {
+                    return 'MDW'
                 }
 
                 return 'full';
