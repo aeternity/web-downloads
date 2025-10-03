@@ -4,12 +4,12 @@
         <div v-if="latestBackups.length">
             <div v-for="b in latestBackups" :key="b.key" style="margin: 6px 0;">
                 <a :href="`${baseUrl}/${b.key}`">
-                    <Badge :text="`Get latest ${getKind(b.key)} for ${getNetwork(b.key)}`" vertical="middle" />
+                    <Badge :text="`Get latest ${getKind(b.key)} snapshot for ${getNetwork(b.key)}`" vertical="middle" />
                 </a>
             </div>
         </div>
         <tabs :options="{ useUrlFragment: false }" @changed="tabChanged()">
-        <tab name="Main net">
+        <tab name="Mainnet">
             <table>
                 <thead>
                     <tr>
@@ -34,7 +34,7 @@
                 <a href="#" @click.prevent="cnt += backupsCnt" v-if="showLoadMore('main')">Show older backups</a>
             </div>
         </tab>
-        <tab name="Test net">
+        <tab name="Testnet">
             <table>
                 <thead>
                     <tr>
@@ -182,11 +182,11 @@
             },
             getKind(key) {
                 if (key.includes('_light_')) {
-                    return 'light'
+                    return 'Light'
                 }
 
                 if (key.includes('_full_')) {
-                    return 'full'
+                    return 'Full'
                 }
 
                 if (key.includes('_mdw_')) {
@@ -198,8 +198,14 @@
         },
         computed: {
             latestBackups() {
-                // Show items that include 'latest' in the name and are not checksum files
-                return (this.backups || []).filter(b => b.key && b.key.includes('latest') && !b.key.endsWith('.md5'));
+                // Show only entries starting with main_v or uat_v that include 'latest' and are not checksum files
+                return (this.backups || []).filter(b => {
+                    const k = (b.key || '').toLowerCase();
+                    if (!k || k.endsWith('.md5')) return false;
+                    const hasPrefix = k.startsWith('main_v') || k.startsWith('uat_v');
+                    const isLatest = k.includes('latest');
+                    return hasPrefix && isLatest;
+                });
             }
         }
     }
